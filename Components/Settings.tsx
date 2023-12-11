@@ -1,55 +1,46 @@
-import { Icon, Image } from "native-base";
-import { SafeAreaView, ScrollView, Text, View } from "react-native";
+import React, { useState } from "react";
+import { StatusBar, Switch, Text, View } from "react-native";
+import useColors from "./useColors";
 
-export const CustomDrawerNavigation = (props) => {
+const Settings = () => {
+  const [settingsState, setSettingsState] = useState({});
+  const settings = [{ name: "Theme", type: "toggle" }];
+
+  const { textColor, backgroundColor } = useColors();
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ height: 250, backgroundColor: "#d2d2d2", opacity: 0.9 }}>
-        <View
-          style={{
-            height: 200,
-            backgroundColor: "Green",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Image
-            // source={require("./assets/no-image.png")}
-            style={{ height: 150, width: 150, borderRadius: 60 }}
-          />
-        </View>
-        <View
-          style={{
-            height: 50,
-            backgroundColor: "Green",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text>Test</Text>
-        </View>
-      </View>
-      <ScrollView>
-        <Text>BLA!!!</Text>
-      </ScrollView>
-      <View style={{ alignItems: "center", bottom: 20 }}>
-        <View style={{ flexDirection: "row" }}>
-          <View style={{ flexDirection: "column", marginRight: 15 }}>
-            <Icon
-              name="flask"
-              style={{ fontSize: 24 }}
-              onPress={() => console.log("Tıkladın")}
+    <View style={{ flex: 1, backgroundColor }}>
+      <StatusBar />
+
+      {settings.map(
+        (setting) => (
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: 10,
+            }}
+          >
+            <Text style={{ color: textColor, fontWeight: "bold" }}>
+              {setting.name}
+            </Text>
+
+            <Switch
+              value={settingsState[setting.name]}
+              onValueChange={(value) => {
+                setSettingsState({ ...settingsState, [setting.name]: value });
+              }}
             />
           </View>
-          <View style={{ flexDirection: "column" }}>
-            <Icon
-              name="call"
-              style={{ fontSize: 24 }}
-              onPress={() => console.log("Tıkladın")}
-            />
-          </View>
-        </View>
-      </View>
-    </SafeAreaView>
+        )
+        // return <View style={{ flexDirection: "row", padding: 10 }}>
+        //   <Text>{setting.name}</Text>
+        //   {setting.type === "toggle" && <Switch value={true} />}
+        // </View>;
+      )}
+    </View>
   );
 };
+
+export default Settings;
