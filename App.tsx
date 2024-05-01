@@ -62,7 +62,11 @@ export default function App() {
 
   const [showSettings, setShowSettings] = useState(false);
 
-  if (showSettings) return <Settings />;
+  const props = {
+    showSettings,
+    setShowSettings,
+  };
+  if (showSettings) return <Settings {...props} />;
 
   return (
     <View style={{ flex: 1, backgroundColor }}>
@@ -84,22 +88,15 @@ export default function App() {
           onValueChange={toggleShouldUseTheme}
           value={shouldUseTheme}
         ></Switch>
-        <TouchableOpacity
-          onPress={() => setShowSettings(true)}
-          style={touchableStyle}
-        >
-          <Text>⚙️</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleRandomBg} disabled={shouldUseTheme}>
-          <Text style={{ color: !shouldUseTheme ? textColor : "lightgrey" }}>
-            Random color
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={touchableStyle} onPress={handleClear}>
-          <Text style={{ color: textColor }}>
-            {confirmClear ? "Are you sure?" : "Clear"}
-          </Text>
-        </TouchableOpacity>
+
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity
+            onPress={() => setShowSettings(true)}
+            style={touchableStyle}
+          >
+            <Text>⚙️</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <TextInput
         multiline
