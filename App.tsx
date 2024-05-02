@@ -1,72 +1,74 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import {
   StatusBar as StatusBarRN,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import Settings from "./Components/Settings";
 import useColors from "./Components/useColors";
+import { useDebounce } from "./Components/useDebounce";
+import React = require("react");
 
 export default function App() {
   const ref = useRef(null);
 
   const [text, setText] = useState("");
-  const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem("text").then((r) => setText(r || ""));
+    AsyncStorage.getItem("text").then((r) => 
+      {
+        setText(r || "")
+        setUndoState([r || ""])
+  });
 
     if (ref.current) ref.current.focus();
   }, []);
 
   function changeText(e) {
     setText(e);
-    setConfirmClear(false);
     AsyncStorage.setItem("text", e);
   }
-
-  const handleClear = () => {
-    if (confirmClear) {
-      AsyncStorage.setItem("text", "", () => {
-        setText("");
-        setConfirmClear(false);
-      });
-      return;
-    }
-    setConfirmClear(true);
-    setTimeout(() => {
-      setConfirmClear(false);
-    }, 4000);
-  };
-
-  const touchableStyle = {
-    backgroundColor: "rgba(0,0,0,0.2)",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  };
 
   const {
     textColor,
     backgroundColor,
-    handleRandomBg,
-    toggleShouldUseTheme,
-    shouldUseTheme,
   } = useColors();
 
-  const [showSettings, setShowSettings] = useState(false);
 
-  const props = {
-    showSettings,
-    setShowSettings,
+  const [undoState, setUndoState] = useState([text]);
+
+  const handleUndo = () => {
+    const undoState2 = JSON.parse(JSON.stringify(undoState));
+    undoState2.pop();
+
+    const newTextVal = undoState2[undoState2.length - 1]
+
+    changeText(newTextVal);
+    setUndoState(undoState2);
   };
-  if (showSettings) return <Settings {...props} />;
+
+  const addToUndo = React.useCallback((newText: string) => {
+    if(undoState[undoState.length - 1] === newText) return;
+    
+      setUndoState(c=>[...c, newText]);
+  },[
+    undoState,
+    setUndoState,
+    text,
+  ])
+
+const deb = useDebounce(addToUndo, 500)
+
+  const handleUpdateText = (newText) => {
+    changeText(newText);
+    deb(newText)
+  }
+
+  const isUndoDisabled = undoState.length <= 1;
 
   return (
     <View style={{ flex: 1, backgroundColor }}>
@@ -74,29 +76,26 @@ export default function App() {
 
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
+          alignItems: "flex-end",
           justifyContent: "space-between",
           padding: 5,
           marginTop: StatusBarRN.currentHeight,
         }}
       >
-        <Switch
-          trackColor={{ false: "#767577", true: "#767577" }}
-          thumbColor={textColor}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={toggleShouldUseTheme}
-          value={shouldUseTheme}
-        ></Switch>
-
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity
-            onPress={() => setShowSettings(true)}
-            style={touchableStyle}
-          >
-            <Text>⚙️</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={{ padding: 10 }}
+          onPress={handleUndo}
+          disabled={isUndoDisabled}
+        >
+          <View style={{ flexDirection: 'row'}}>
+          <Text style={{ color: isUndoDisabled ?  'grey': textColor  }}>
+            ↩︎ Undo
+          </Text>
+          <Text style={{ color: isUndoDisabled ?  'grey': textColor, fontSize: 10 }}>
+            {undoState.length > 1 ? ` [${undoState.length - 1}]` : "   "}
+          </Text>
+          </View>
+        </TouchableOpacity>
       </View>
       <TextInput
         multiline
@@ -106,9 +105,9 @@ export default function App() {
         style={{ ...styles.input, color: textColor }}
         selectTextOnFocus={false}
         numberOfLines={20}
-        cursorColor={"pink"}
+        cursorColor={textColor}
         value={text}
-        onChangeText={changeText}
+        onChangeText={handleUpdateText}
       ></TextInput>
     </View>
   );

@@ -1,5 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
 import { useColorScheme } from "react-native";
 
 function getRandomHexColor() {
@@ -26,40 +24,11 @@ function getFontColrBasedOnBGLuma(background): "white" | "#222" {
 }
 
 const useColors = () => {
-  const [bg, setBg] = useState("");
-  const [shouldUseTheme, setShouldUseTheme] = useState(true);
-
   const colorScheme = useColorScheme();
-  const themeBackgroundColor = colorScheme === "light" ? bg : "#222";
-
-  const bgToUse = shouldUseTheme ? themeBackgroundColor : bg;
-  const textColor =
-    getFontColrBasedOnBGLuma(bgToUse) === "#222" ? "#222" : "white";
-
-  useEffect(() => {
-    AsyncStorage.getItem("bg").then((r) => setBg(r || ""));
-    AsyncStorage.getItem("shouldUseTheme").then((r) =>
-      setShouldUseTheme(JSON.parse(r))
-    );
-  }, []);
-
-  const handleRandomBg = () => {
-    const color = getRandomHexColor();
-    setBg(color);
-    AsyncStorage.setItem("bg", color);
-  };
-
-  const toggleShouldUseTheme = () => {
-    setShouldUseTheme(!shouldUseTheme);
-    AsyncStorage.setItem("shouldUseTheme", JSON.stringify(!shouldUseTheme));
-  };
 
   return {
-    textColor,
-    backgroundColor: bgToUse,
-    shouldUseTheme,
-    handleRandomBg,
-    toggleShouldUseTheme,
+    textColor:  colorScheme === "dark" ? "white" : "#222",
+    backgroundColor: colorScheme === "light" ? "white" : "#222"
   };
 };
 
