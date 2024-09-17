@@ -1,145 +1,84 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  StatusBar as StatusBarRN,
-  StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  useColorScheme,
+  View
 } from "react-native";
-
-// switch
-/**
- * 
-    <Switch
-        trackColor={{ false: "gray", true: "pink" }}
-        thumbColor={"white"}
-        ios_backgroundColor="#3e3e3e"
-        onValueChange={() => setIsEnabled(!isEnabled)}
-        value={isEnabled}
-      ></Switch>
- */
-
-function getRandomHexColor() {
-  // Generating a random number between 0 and 16777215 (0xffffff)
-  const randomColor = Math.floor(Math.random() * 16777215).toString(16);
-  // Adding zeros to ensure the color has six digits
-  return "#" + "0".repeat(6 - randomColor.length) + randomColor;
-}
-
-function getFontColrBasedOnBGLuma(background): "white" | "#222" {
-  // let color = 'white'
-  var c = background.substring(1); // strip #
-  var rgb = parseInt(c, 16); // convert rrggbb to decimal
-  var r = (rgb >> 16) & 0xff; // extract red
-  var g = (rgb >> 8) & 0xff; // extract green
-  var b = (rgb >> 0) & 0xff; // extract blue
-  var luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; // per ITU-R BT.709
-
-  if (luma < 70) {
-    return "white";
-  }
-
-  return "#222";
-}
+import useColors from "./hooks/useColors";
+import useDebounce from "./hooks/useDebounce";
+import { styles } from "./styles";
 
 export default function App() {
-  const [text, setText] = useState("");
   const ref = useRef(null);
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [bg, setBg] = useState("");
-  const [shouldUseTheme, setShouldUseTheme] = useState(true);
+
+  const [text, setText] = useState("");
+  const [undoState, setUndoState] = useState([text]);
+
+  const { textColor, backgroundColor } = useColors();
+
+  const isUndoDisabled = undoState.length <= 1;
 
   useEffect(() => {
-    AsyncStorage.getItem("text").then((r) => setText(r || ""));
-    AsyncStorage.getItem("bg").then((r) => setBg(r || ""));
-    AsyncStorage.getItem("shouldUseTheme").then((r) =>
-      setShouldUseTheme(JSON.parse(r))
-    );
+    // on init, grab the text from storage and reset the undo state to nothing
+    AsyncStorage.getItem("text").then((r) => {
+      setText(r || "")
+      setUndoState([r || ""])
+    });
 
     if (ref.current) ref.current.focus();
   }, []);
 
-  function changeText(e) {
+  const handleChangeText = React.useCallback(e => {
     setText(e);
-    setConfirmClear(false);
     AsyncStorage.setItem("text", e);
-  }
+  }, [setText]);
 
-  const colorScheme = useColorScheme();
-  const themeBackgroundColor = colorScheme === "light" ? bg : "#222";
-  // const backgroundColor = colorScheme === "light" ? "white" : "#222";
+  const handleUndo = React.useCallback(() => {
+    // because structuredClone is too much to ask for
+    const undoStateCopy = JSON.parse(JSON.stringify(undoState));
+    undoStateCopy.pop();
 
-  const bgToUse = shouldUseTheme ? themeBackgroundColor : bg;
-  const textColor =
-    getFontColrBasedOnBGLuma(bgToUse) === "#222" ? "#222" : "white";
+    const newTextVal = undoStateCopy[undoStateCopy.length - 1]
 
-  const toggleShouldUseTheme = () => {
-    setShouldUseTheme(!shouldUseTheme);
-    AsyncStorage.setItem("shouldUseTheme", JSON.stringify(!shouldUseTheme));
-  };
+    handleChangeText(newTextVal);
+    setUndoState(undoStateCopy);
+  }, [undoState, setUndoState, handleChangeText]);
 
-  const handleRandomBg = () => {
-    const color = getRandomHexColor();
-    setBg(color);
-    AsyncStorage.setItem("bg", color);
-  };
+  const addToUndo = React.useCallback((newText: string) => {
+    if (undoState[undoState.length - 1] === newText) return;
 
-  const handleClear = () => {
-    if (confirmClear) {
-      AsyncStorage.setItem("text", "", () => {
-        setText("");
-        setConfirmClear(false);
-      });
-      return;
-    }
-    setConfirmClear(true);
-    setTimeout(() => {
-      setConfirmClear(false);
-    }, 4000);
-  };
+    setUndoState(c => [...c, newText]);
+  }, [undoState, setUndoState, text])
 
-  const touchableStyle = {
-    backgroundColor: "rgba(0,0,0,0.2)",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  };
+  const debouncedUndoStateUpdate = useDebounce(addToUndo, 500)
+
+  const handleUpdateText = React.useCallback((newText) => {
+    handleChangeText(newText);
+    debouncedUndoStateUpdate(newText)
+  }, [handleChangeText, debouncedUndoStateUpdate]);
 
   return (
-    // <View style={{ flex: 1, backgroundColor }}>
-    <View style={{ flex: 1, backgroundColor: bgToUse }}>
+    <View style={{ flex: 1, backgroundColor }}>
       <StatusBar backgroundColor="rgba(0,0,0,0.1)" />
-
       <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: 5,
-          marginTop: StatusBarRN.currentHeight,
-        }}
+        style={styles.statusBar}
       >
-        <Switch
-          trackColor={{ false: "#767577", true: "#767577" }}
-          thumbColor={textColor}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={toggleShouldUseTheme}
-          value={shouldUseTheme}
-        ></Switch>
-        <TouchableOpacity onPress={handleRandomBg} disabled={shouldUseTheme}>
-          <Text style={{ color: !shouldUseTheme ? textColor : "lightgrey" }}>
-            Random color
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={touchableStyle} onPress={handleClear}>
-          <Text style={{ color: textColor }}>
-            {confirmClear ? "Are you sure?" : "Clear"}
-          </Text>
+        <TouchableOpacity
+          style={styles.undoButtonWrapper}
+          onPress={handleUndo}
+          disabled={isUndoDisabled}
+        >
+          <View style={styles.topSection}>
+            <Text style={{ color: isUndoDisabled ? 'grey' : textColor }}>
+              ↩︎ Undo
+            </Text>
+            <Text style={{ color: isUndoDisabled ? 'grey' : textColor, fontSize: 10 }}>
+              {undoState.length > 1 ? ` [${undoState.length - 1}]` : "  "}
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
       <TextInput
@@ -147,24 +86,16 @@ export default function App() {
         verticalAlign="top"
         textAlignVertical="top"
         ref={ref}
-        style={{ ...styles.input, color: textColor }}
+        style={{
+          ...styles.content,
+          color: textColor
+        }}
         selectTextOnFocus={false}
         numberOfLines={20}
-        cursorColor={"pink"}
+        cursorColor={textColor}
         value={text}
-        onChangeText={changeText}
-      ></TextInput>
+        onChangeText={handleUpdateText}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  input: {
-    flex: 1,
-    width: "100%",
-    fontSize: 20,
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
