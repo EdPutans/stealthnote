@@ -61,7 +61,7 @@ export default function App() {
   }, [handleChangeText, debouncedUndoStateUpdate]);
 
   return (
-    <View style={{ flex: 1, backgroundColor }}>
+    <View style={{ ...styles.container, backgroundColor }}>
       <StatusBar backgroundColor="rgba(0,0,0,0.1)" />
       <View
         style={styles.statusBar}
