@@ -83,7 +83,7 @@ const deb = useDebounce(addToUndo, 500)
         }}
       >
         <TouchableOpacity
-          style={{ padding: 10 }}
+          style={{ padding: 5 }}
           onPress={handleUndo}
           disabled={isUndoDisabled}
         >
