@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import useColors from "./hooks/useColors";
 import useDebounce from "./hooks/useDebounce";
+import useTapCheckbox from "./hooks/useTapCheckbox";
 import { styles } from "./styles";
 
 export default function App() {
@@ -60,6 +61,11 @@ export default function App() {
     debouncedUndoStateUpdate(newText)
   }, [handleChangeText, debouncedUndoStateUpdate]);
 
+  const {
+    handleTap,
+    handleSelectionChange,
+  } = useTapCheckbox({ text, handleUpdateText });
+
   return (
     <View style={{ ...styles.container, backgroundColor }}>
       <StatusBar backgroundColor="rgba(0,0,0,0.1)" />
@@ -83,6 +89,8 @@ export default function App() {
       </View>
       <TextInput
         multiline
+        onSelectionChange={handleSelectionChange}
+        onPressIn={handleTap}
         verticalAlign="top"
         textAlignVertical="top"
         ref={ref}
