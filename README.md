@@ -10,6 +10,7 @@ For when you need to quickly dump your ideas _**somewhere**_, and worry about st
 - Jumbo-sized text input
 - Dark mode / light mode based on device's settings
 - Undo button
+- Triple tap prepends a checkbox to the beginning of selected line (line of text separated by ⏎)
 
 ## Installation
 
