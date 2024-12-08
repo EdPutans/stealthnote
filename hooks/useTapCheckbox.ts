@@ -1,16 +1,18 @@
-
-import { useRef, useState } from 'react';
+import { useRef, useState } from "react";
 
 const TAP_DELAY_MS = 300;
-const CHECKBOX_PREPEND = '✅ ';
+const CHECKBOX_PREPEND = "✅ ";
 
 type Props = {
   text: string;
   handleUpdateText: (val: string) => void;
-}
+};
 
 const useTapCheckbox = ({ text, handleUpdateText }: Props) => {
-  const [selection, setSelection] = useState<{ start: number, end: number }>({ start: 0, end: 0 });
+  const [selection, setSelection] = useState<{ start: number; end: number }>({
+    start: 0,
+    end: 0,
+  });
 
   const lastTap = useRef(null);
   const tapCount = useRef(0);
@@ -26,13 +28,11 @@ const useTapCheckbox = ({ text, handleUpdateText }: Props) => {
 
     lastTap.current = now;
     if (tapCount.current === 2) {
-
     } else if (tapCount.current === 3) {
       toggleCheckboxOnLine();
       tapCount.current = 0;
     }
   };
-
 
   const handleSelectionChange = ({ nativeEvent: { selection } }) => {
     setSelection(selection);
@@ -40,11 +40,11 @@ const useTapCheckbox = ({ text, handleUpdateText }: Props) => {
 
   const toggleCheckboxOnLine = () => {
     const cursorPosition = selection.start;
-    let lines = text.split('\n');
+    let lines = text.split("\n");
     let charCount = 0;
     let lineIndex = 0;
 
-    for (let i = 0;i < lines.length;i++) {
+    for (let i = 0; i < lines.length; i++) {
       charCount += lines[i].length + 1;
       if (cursorPosition < charCount) {
         lineIndex = i;
@@ -60,14 +60,14 @@ const useTapCheckbox = ({ text, handleUpdateText }: Props) => {
       lines[lineIndex] = CHECKBOX_PREPEND + currentLine;
     }
 
-    handleUpdateText(lines.join('\n'));
+    handleUpdateText(lines.join("\n"));
   };
 
   return {
     handleTap,
     selection,
     handleSelectionChange,
-  }
-}
+  };
+};
 
-export default useTapCheckbox
+export default useTapCheckbox;
